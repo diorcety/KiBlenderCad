@@ -78,6 +78,10 @@ def _main(argv=sys.argv):
     else:
         verbose_args = []
 
+    exec_env = os.environ.copy()
+    for v in ['VIRTUAL_ENV', 'PYTHONPATH', 'PYTHONUNBUFFERED']:
+        exec_env.pop(v, None)
+
     tmp_path = mkdir_p(os.path.join(args.output, "tmp"))
     textures_path = mkdir_p(os.path.join(args.output, "textures"))
     script_path = pathlib.Path(__file__).parent.resolve()
@@ -90,7 +94,7 @@ def _main(argv=sys.argv):
     sub_args += verbose_args
     sub_args += [args.input, tmp_path]
     logger.debug("Call " + " ".join(sub_args))
-    subprocess.call(sub_args)
+    subprocess.call(sub_args, env=exec_env)
 
     logger.debug("Opening SVG data output")
     with open(os.path.join(tmp_path, "data.json")) as json_file:
@@ -111,7 +115,7 @@ def _main(argv=sys.argv):
         sub_args += ["-u", data['units']]
         sub_args += ["%f:%f:%f:%f" % (data['x'], data['y'], data['width'], data['height'])]
         logger.debug("Call " + " ".join(sub_args))
-        subprocess.call(sub_args)
+        subprocess.call(sub_args, env=exec_env)
 
     logger.info("Create Blender file")
     # Call blender script with blender executable
@@ -119,8 +123,7 @@ def _main(argv=sys.argv):
     sub_args += verbose_args
     sub_args += [os.path.join(script_path, "Template.blend"), wrl_file, textures_path, blender_file]
     logger.debug("Call " + " ".join(sub_args))
-    subprocess.call(sub_args)
-
+    subprocess.call(sub_args, env=exec_env)
 
 def main():
     try:
