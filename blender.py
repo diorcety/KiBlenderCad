@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
+import os
+import sys
+# cx_freeze issue like this one https://github.com/pyinstaller/pyinstaller/issues/3795
+if sys.platform == "win32":
+    import ctypes
+    ctypes.windll.kernel32.SetDllDirectoryA(None)
+
+
 import bpy
 import bmesh
 
 import logging
-import sys
 import argparse
-import os
 import pathlib
 
 from mathutils.bvhtree import BVHTree

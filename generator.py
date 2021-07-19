@@ -7,7 +7,6 @@ import sys
 import argparse
 import subprocess
 import json
-
 import pathlib
 
 logger = logging.getLogger(__name__)
@@ -54,6 +53,7 @@ def call_program(*args, **kwargs):
     exec_env = os.environ.copy()
     for v in ['VIRTUAL_ENV', 'PYTHONPATH', 'PYTHONUNBUFFERED']:
         exec_env.pop(v, None)
+    exec_env['PATH'] = os.pathsep.join([a for a in exec_env['PATH'].split(os.pathsep) if a not in sys.path])
     kwargs = kwargs.copy()
     kwargs.update(env=exec_env)
     ret = subprocess.call(*args, **kwargs)
@@ -92,7 +92,10 @@ def _main(argv=sys.argv):
 
     tmp_path = mkdir_p(os.path.join(args.output, "tmp"))
     textures_path = mkdir_p(os.path.join(args.output, "textures"))
-    script_path = pathlib.Path(__file__).parent.resolve()
+    if sys.frozen:
+        script_path = os.path.dirname(sys.executable)
+    else:
+        script_path = pathlib.Path(__file__).parent.resolve()
     blender_file = os.path.join(args.output, os.path.basename(os.path.splitext(args.input)[0] + '.blend'))
 
     logger.info("Export boards SVGs and VRML")
@@ -115,7 +118,10 @@ def _main(argv=sys.argv):
         png_file = os.path.join(textures_path, path.with_suffix(".png").name)
 
         # Call inkscape script with current python env
-        sub_args = [sys.executable, os.path.join(script_path, "inkscape.py")]
+        if sys.frozen:
+            sub_args = [os.path.join(script_path, "inkscape.exe")]
+        else:
+            sub_args = [sys.executable, os.path.join(script_path, "inkscape.py")]
         sub_args += verbose_args
         sub_args += [svg_file, "-o", png_file]
         sub_args += ["-s", str(args.quality)]
