@@ -7,8 +7,20 @@ import logging
 import sys
 import argparse
 import json
+import subprocess
 
 logger = logging.getLogger(__name__)
+
+
+def call_program(*args, **kwargs):
+    exec_env = os.environ.copy()
+    for v in ['VIRTUAL_ENV', 'PYTHONPATH', 'PYTHONUNBUFFERED']:
+        exec_env.pop(v, None)
+    kwargs = kwargs.copy()
+    kwargs.update(env=exec_env)
+    ret = subprocess.call(*args, **kwargs)
+    if ret != 0:
+        raise Exception("Error occurs in a subprogram")
 
 
 def set_default_settings(board):
@@ -156,15 +168,17 @@ def parse_edges(pcb):
 
 def get_bounding_box(pcb):
     edges, _ = parse_edges(pcb)
-    x_min = y_min = x_max = y_max = None
+    x_min = y_min = float('+inf')
+    x_max = y_max = float('-inf')
     for edge in edges:
-        xs, ys = zip(edge['start'], edge['end'])
-        for x in xs:
-            x_min = x if x_min is None else min(x_min, x)
-            x_max = x if x_max is None else max(x_max, x)
-        for y in ys:
-            y_min = y if y_min is None else min(y_min, y)
-            y_max = y if y_max is None else max(y_max, y)
+        if 'start' in edge and 'end' in edge:
+            xs, ys = zip(edge['start'], edge['end'])
+            for x in xs:
+                x_min = min(x_min, x)
+                x_max = max(x_max, x)
+            for y in ys:
+                y_min = min(y_min, y)
+                y_max = max(y_max, y)
     return x_min, y_min, x_max, y_max
 
 
@@ -176,6 +190,16 @@ def export_layers(board, output_directory):
         logger.debug('plotting layer {} ({}) to SVG'.format(name, layer))
         output_filename = plot(board, layer, file, name, output_directory)
         logger.info('Layer %s SVG: %s' % (name, output_filename))
+
+
+def export_vrml(board_file, vrml_file, origin):
+    kicad2vrml = os.path.join(os.path.dirname(sys.executable), "kicad2vrml" + (".exe" if os.name == 'nt' else ""))
+    sub_args = [kicad2vrml]
+    sub_args += [board_file]
+    sub_args += ["-f", "-o", vrml_file]
+    sub_args += ["--user-origin", "%fx%f" % (origin[0], origin[1])]
+    logger.debug("Call " + " ".join(sub_args))
+    call_program(sub_args)
 
 
 def _main(argv=sys.argv):
@@ -198,12 +222,17 @@ def _main(argv=sys.argv):
     # Set logging level
     logging.getLogger().setLevel(max(3 - args.verbose_count, 0) * 10)
 
+    logger.debug("Loading board")
     board = pcbnew.LoadBoard(args.input)
-
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
     export_layers(board, args.output)
+
+    x, y = board.GetGridOrigin()
+    x, y = (x / pcbnew.IU_PER_MM, y / pcbnew.IU_PER_MM)
+    vrml_file = os.path.join(args.output, os.path.basename(os.path.splitext(args.input)[0] + '.wrl'))
+    export_vrml(args.input, vrml_file, (x, y))
 
     with open(os.path.join(args.output, "data.json"), 'wb') as fp:
         x1, y1, x2, y2 = get_bounding_box(board)
@@ -212,7 +241,9 @@ def _main(argv=sys.argv):
             "y": y1,
             'width': x2 - x1,
             'height': y2 - y1,
-            'units': 'mm'
+            'thickness': board.GetDesignSettings().GetBoardThickness() / pcbnew.IU_PER_MM,
+            'units': 'mm',
+            'vrml': vrml_file
         }
         json.dump(values, fp)
 
