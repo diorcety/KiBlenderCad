@@ -92,7 +92,7 @@ def _main(argv=sys.argv):
 
     tmp_path = mkdir_p(os.path.join(args.output, "tmp"))
     textures_path = mkdir_p(os.path.join(args.output, "textures"))
-    if sys.frozen:
+    if getattr(sys, 'frozen', False):
         script_path = os.path.dirname(sys.executable)
     else:
         script_path = pathlib.Path(__file__).parent.resolve()
@@ -118,7 +118,7 @@ def _main(argv=sys.argv):
         png_file = os.path.join(textures_path, path.with_suffix(".png").name)
 
         # Call inkscape script with current python env
-        if sys.frozen:
+        if getattr(sys, 'frozen', False):
             sub_args = [os.path.join(script_path, "inkscape.exe")]
         else:
             sub_args = [sys.executable, os.path.join(script_path, "inkscape.py")]
