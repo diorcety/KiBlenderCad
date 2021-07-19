@@ -138,7 +138,7 @@ def _main(argv=sys.argv):
         'unit': args.unit,
     })
 
-    logger.debug('Convert SVG %s to PNG %s' % (args.input, args.output))
+    logger.info('Convert SVG %s to PNG %s' % (args.input, args.output))
     svg_to_png(args.input, args.output, options)
 
 

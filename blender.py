@@ -158,7 +158,7 @@ def factorize_mats(objects):
             bpy.data.materials.remove(mat)
 
 
-def regroup_meshs(objects, max_distance=0.05):
+def regroup_meshes(objects, max_distance=0.05):
     initial_len = len(objects)
 
     objects = set(objects)
@@ -169,7 +169,7 @@ def regroup_meshs(objects, max_distance=0.05):
         bm.free()
 
     while len(objects) > 0:
-        logger.debug("Progress %d" % ((initial_len - len(objects)) / initial_len * 100))
+        logger.info("Regroup meshes progression: %d%%" % ((initial_len - len(objects)) / initial_len * 100))
         to_merge = set()
 
         obj_a = objects.pop()
@@ -251,16 +251,16 @@ def fancy_positioning(camera, focus, all_objects):
 
 
 def instantiate_template(output_file, template_file, pcb_dimensions, wrl, texture_directory):
-    logger.debug("Open template file: %s" % template_file)
+    logger.info("Open template file: %s" % template_file)
     bpy.ops.wm.open_mainfile(filepath=template_file)
 
     bpy.ops.object.select_all(action='DESELECT')
 
-    logger.debug("Create PCB collection")
+    logger.info("Create PCB collection")
     pcb_collection = bpy.data.collections.new("PCB")
     bpy.context.scene.collection.children.link(pcb_collection)
 
-    logger.debug("Import WRL file: %s" % wrl)
+    logger.info("Import WRL file: %s" % wrl)
     if not os.path.exists(wrl):
         raise Exception("WRL file doesn't exist")
     bpy.ops.import_scene.x3d(filepath=wrl)
@@ -274,13 +274,13 @@ def instantiate_template(output_file, template_file, pcb_dimensions, wrl, textur
 
     pcb_collection = bpy.data.collections.get("PCB")
 
-    logger.debug("Clean up duplicated vertices")
+    logger.info("Clean up duplicated vertices")
     cleanup(pcb_collection.all_objects)
 
-    logger.debug("Clean up duplicated materials")
+    logger.info("Clean up duplicated materials")
     factorize_mats(pcb_collection.all_objects)
 
-    logger.debug("Merge PCB objects (PCB edges and holes, with surface ones)")
+    logger.info("Merge PCB objects (PCB edges and holes, with surface ones)")
     pcb_objects = None
     if pcb_dimensions is not None:
         pcb_objects = get_pcb(pcb_collection.all_objects, pcb_dimensions)
@@ -296,15 +296,15 @@ def instantiate_template(output_file, template_file, pcb_dimensions, wrl, textur
         pcb_object = pcb_objects[0]
     pcb_object.name = "Board"
 
-    logger.debug("Merge mesh from same components")
+    logger.info("Merge meshes from same components")
     component_mesh = set(pcb_collection.all_objects)
     component_mesh.remove(pcb_object)
-    regroup_meshs(component_mesh)
+    regroup_meshes(component_mesh)
 
-    logger.debug("Clean up duplicated vertices again")
+    logger.info("Clean up duplicated vertices again")
     cleanup(pcb_collection.all_objects)
 
-    logger.debug("Link PCB material with textures")
+    logger.info("Link PCB material with textures")
     pcb_mat = bpy.data.materials.get("PCB")
     for node_label, file_pattern in texture_map.items():
         svg_files = list(pathlib.Path(texture_directory).glob('*' + file_pattern + '.png'))
@@ -313,19 +313,19 @@ def instantiate_template(output_file, template_file, pcb_dimensions, wrl, textur
             continue
         get_by_label(pcb_mat.node_tree.nodes, node_label).image = bpy.data.images.load(filepath=str(svg_files[0]))
 
-    logger.debug("Create UV Maps")
+    logger.info("Create UV Maps")
     top_map = pcb_object.data.uv_layers.new(name='Top UV Map')
     bottom_map = pcb_object.data.uv_layers.new(name='Bottom UV Map')
     get_by_label(pcb_mat.node_tree.nodes, "UV Map Top").uv_map = top_map.name
     get_by_label(pcb_mat.node_tree.nodes, "UV Map Bottom").uv_map = bottom_map.name
 
-    logger.debug("Add PCB material to PCB Mesh")
+    logger.info("Add PCB material to PCB Mesh")
     pcb_object.data.materials[0] = pcb_mat
 
-    logger.debug("Positioning the board")
+    logger.info("Positioning the board")
     fancy_positioning(bpy.data.objects['Camera'], bpy.data.objects['Camera_Focus'], pcb_collection.all_objects)
 
-    logger.debug("Save final file: %s" % output_file)
+    logger.info("Save final file: %s" % output_file)
     bpy.ops.wm.save_as_mainfile(filepath=output_file)
 
 

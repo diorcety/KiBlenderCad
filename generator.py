@@ -66,7 +66,7 @@ def _main(argv=sys.argv):
                         format='%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
     parser = argparse.ArgumentParser(prog=argv[0], description='KicadBlender',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-v', '--verbose', dest='verbose_count', action='count', default=0,
+    parser.add_argument('-v', '--verbose', dest='verbose_count', action='count', default=1,
                         help="increases log verbosity for each occurrence.")
     parser.add_argument('-q', '--quality', default=100, type=int,
                         help="texture quality")

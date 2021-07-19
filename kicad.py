@@ -231,11 +231,13 @@ def _main(argv=sys.argv):
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
+    logger.info("Export Layers to SVG")
     export_layers(board, args.output)
 
     x, y = board.GetGridOrigin()
     x, y = (x / pcbnew.IU_PER_MM, y / pcbnew.IU_PER_MM)
     vrml_file = os.path.join(args.output, os.path.basename(os.path.splitext(args.input)[0] + '.wrl'))
+    logger.info("Export VRML")
     export_vrml(args.input, vrml_file, (x, y))
 
     with open(os.path.join(args.output, "data.json"), 'wb') as fp:
