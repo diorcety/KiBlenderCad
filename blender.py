@@ -327,6 +327,8 @@ def instantiate_template(output_file, template_file, pcb_dimensions, wrl, textur
 
     logger.info("Save final file: %s" % output_file)
     bpy.ops.wm.save_as_mainfile(filepath=output_file)
+    bpy.ops.file.make_paths_relative()
+    bpy.ops.wm.save_mainfile()
 
 
 def dim_type(strings):
