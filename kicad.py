@@ -197,7 +197,10 @@ def export_layers(board, output_directory):
 
 
 def export_vrml(board_file, vrml_file, origin):
-    kicad2vrml = os.path.join(os.path.dirname(sys.executable), "kicad2vrml" + (".exe" if os.name == 'nt' else ""))
+    if os.name == 'nt':
+        kicad2vrml = os.path.join(os.path.dirname(sys.executable), "kicad2vrml.exe")
+    else:
+        kicad2vrml = "kicad2vrml"
     sub_args = [kicad2vrml]
     sub_args += [board_file]
     sub_args += ["-f", "-o", vrml_file]

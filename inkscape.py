@@ -54,8 +54,9 @@ else:
     ink_program = 'inkscape'
 
 # Use current locale (used by inkscape)
-curr = locale.getdefaultlocale()
-locale.setlocale(locale.LC_ALL, curr[0])
+if os.name == 'nt':
+    curr = locale.getdefaultlocale()
+    locale.setlocale(locale.LC_ALL, curr[0])
 
 
 def number_format(number):
