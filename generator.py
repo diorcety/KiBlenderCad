@@ -126,7 +126,7 @@ def _main(argv=sys.argv):
         sub_args += [svg_file, "-o", png_file]
         sub_args += ["-s", str(args.quality)]
         sub_args += ["-u", data['units']]
-        sub_args += ["%f:%f:%f:%f" % (data['x'], data['y'], data['width'], data['height'])]
+        sub_args += ["--", "%f:%f:%f:%f" % (data['x'], data['y'], data['width'], data['height'])]
         logger.debug("Call " + " ".join(sub_args))
         call_program(sub_args)
 
